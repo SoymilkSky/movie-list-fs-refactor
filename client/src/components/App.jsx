@@ -77,8 +77,12 @@ class App extends React.Component {
   }
 
   // handles grabbing and displaying movie information from themoviedb
+  // maybe we don't need this as a function in the main app
+  // it can be within the movie entry component
   handleTitleClick(movieTitle) {
     console.log('title clicked: ', movieTitle);
+    axios.get('https://api.themoviedb.org/3/movie/568124?api_key=ce2c7cb6a10e5145e2d433e13db5058b&language=en-US')
+      .then(movie => {console.log(movie.data)});
   }
 
   // handles clicking on the watched button to swap to that tab
@@ -149,17 +153,26 @@ function Add(props) {
   )
 };
 
+
+// refactor this into a stateful component to hold a boolean for if the title has been clicked
+// if true, then reveal the span that contains all the information from TMDB
+// if false, then conceal the span
+// maybe write the api request inside server and then do an axios request to my local server?
+// or would that be too many requests
 function MovieEntry(props) {
   return (
-    <div>
-      <div className="movie-entry"
-        onClick={() => props.click(props.movie.moviename)}>{props.movie.moviename}
-      </div>
-      <button
-          onClick={() => props.toggle(props.movie)}>
-          {props.movie.watched === 0 ? 'to watch' : 'watched'}
-        </button>
-
+    <div id="movie-entry-wrapper">
+      <li className="movie-entry">
+        <span
+        onClick={() => props.click(props.movie.moviename)}>
+        {props.movie.moviename}</span>
+        <span>
+          <button className="movie-entry-toggle"
+            onClick={() => props.toggle(props.movie)}>
+            {props.movie.watched === 0 ? 'to watch' : 'watched'}
+          </button>
+        </span>
+      </li>
     </div>
   )
 };
