@@ -76,17 +76,6 @@ class App extends React.Component {
       .then(this.handleLoadingAllMovies());
   }
 
-  // handles grabbing and displaying movie information from themoviedb
-  // maybe we don't need this as a function in the main app
-  // it can be within the movie entry component
-  handleTitleClick(movieTitle) {
-    axios.get(`https://api.themoviedb.org/3/search/movie?api_key=ce2c7cb6a10e5145e2d433e13db5058b&language=en-US&query=${movieTitle}`)
-      .then(searchResults => searchResults.data.results[0].id)
-      .then(movieId => axios.get(`https://api.themoviedb.org/3/movie/${movieId}?api_key=ce2c7cb6a10e5145e2d433e13db5058b&language=en-US`))
-      .then(movie => console.log(movie.data))
-      .catch(err => console.log(err));
-  }
-
   // handles clicking on the watched button to swap to that tab
   handleWatchedButton() {
     this.setState({
@@ -101,6 +90,7 @@ class App extends React.Component {
     })
   }
 
+  // filters movies based on current display state
   filterMovies() {
     if (this.state.currentDisplay === "toWatch") {
       // return an array of the movie objects where the movies watchedState = 0
@@ -114,25 +104,25 @@ class App extends React.Component {
   }
 
   render() {
-    return(
+    return (
       <div>
         <h1>Movie List</h1>
-         <div>
-          <Search search={this.handleSearch.bind(this)}/>
-          <Add add={this.handleAdd.bind(this)}/><br></br>
-          <button id="to-watch-button" type ="submit" value="To Watch"
+        <div>
+          <Search search={this.handleSearch.bind(this)} />
+          <Add add={this.handleAdd.bind(this)} /><br></br>
+          <button id="to-watch-button" type="submit" value="To Watch"
             onClick={this.handleToWatchButton.bind(this)}>To Watch</button>
-          <button id="watched-button" type ="submit" value="Watched"
+          <button id="watched-button" type="submit" value="Watched"
             onClick={this.handleWatchedButton.bind(this)}>Watched</button>
           <MovieList movies={this.filterMovies()}
-            toggleWatch={this.handleWatchedToggle.bind(this)}
-            titleClick={this.handleTitleClick.bind(this)}/>
-         </div>
+            toggleWatch={this.handleWatchedToggle.bind(this)} />
+        </div>
       </div>
     )
   }
 };
 
+// search bar functionality
 function Search(props) {
   return (
     <div>
@@ -144,6 +134,7 @@ function Search(props) {
   )
 };
 
+// add bar functionality
 function Add(props) {
   return (
     <div>
@@ -155,30 +146,62 @@ function Add(props) {
   )
 };
 
+// each movie entry and all the tmdb logic
+class MovieEntry extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      titleClicked: false,
+      tmdbData: []
+    };
+    this.handleTitleClick = this.handleTitleClick.bind(this);
+  }
 
-// refactor this into a stateful component to hold a boolean for if the title has been clicked
-// if true, then reveal the span that contains all the information from TMDB
-// if false, then conceal the span
-// maybe write the api request inside server and then do an axios request to my local server?
-// or would that be too many requests
-function MovieEntry(props) {
-  return (
-    <div id="movie-entry-wrapper">
-      <li className="movie-entry">
-        <span
-        onClick={() => props.click(props.movie.moviename)}>
-        {props.movie.moviename}</span>
-        <span>
-          <button className="movie-entry-toggle"
-            onClick={() => props.toggle(props.movie)}>
-            {props.movie.watched === 0 ? 'to watch' : 'watched'}
-          </button>
-        </span>
-      </li>
-    </div>
-  )
+  handleTitleClick() {
+    console.log(this.props.movie.moviename);
+    if (this.state.tmdbData.length === 0) {
+      axios.get(`https://api.themoviedb.org/3/search/movie?api_key=ce2c7cb6a10e5145e2d433e13db5058b&language=en-US&query=${this.props.movie.moviename}`)
+        .then(searchResults => searchResults.data.results[0].id)
+        .then(movieId => axios.get(`https://api.themoviedb.org/3/movie/${movieId}?api_key=ce2c7cb6a10e5145e2d433e13db5058b&language=en-US`))
+        .then(movie => this.setState({tmdbData: movie.data}))
+        .then(() => this.setState({titleClicked: !this.state.titleClicked}))
+        .catch(err => console.log(err));
+    } else {
+      this.setState({
+        titleClicked: !this.state.titleClicked
+      })
+    }
+  }
+
+  render(){
+    return (
+      <div id="movie-entry-wrapper">
+        <li className="movie-entry">
+          <span
+            onClick={() => this.handleTitleClick()}>
+            {this.props.movie.moviename}</span><br></br>
+          {this.state.titleClicked ?
+            <span>
+              <span>Release Year: {this.state.tmdbData.release_date}</span><br></br>
+              <span>Runtime: {this.state.tmdbData.runtime}</span><br></br>
+              <span>Rating: {this.state.tmdbData.vote_average}</span><br></br>
+              <span>Description: {this.state.tmdbData.overview}</span><br></br>
+              <img src={`https://image.tmdb.org/t/p/w500/${this.state.tmdbData.poster_path}`} /><br></br>
+              <button className="movie-entry-toggle"
+                onClick={() => {
+                  this.setState({ titleClicked: !this.state.titleClicked });
+                  this.props.toggle(this.props.movie);
+                }}>
+                {this.props.movie.watched === 0 ? 'to watch' : 'watched'}
+              </button>
+            </span> : null}
+        </li>
+      </div>
+    )
+  }
 };
 
+// component that holds all the movie entries
 function MovieList(props) {
   return (
     <div className ="movie=list">
