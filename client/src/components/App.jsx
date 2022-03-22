@@ -80,9 +80,11 @@ class App extends React.Component {
   // maybe we don't need this as a function in the main app
   // it can be within the movie entry component
   handleTitleClick(movieTitle) {
-    console.log('title clicked: ', movieTitle);
-    axios.get('https://api.themoviedb.org/3/movie/568124?api_key=ce2c7cb6a10e5145e2d433e13db5058b&language=en-US')
-      .then(movie => {console.log(movie.data)});
+    axios.get(`https://api.themoviedb.org/3/search/movie?api_key=ce2c7cb6a10e5145e2d433e13db5058b&language=en-US&query=${movieTitle}`)
+      .then(searchResults => searchResults.data.results[0].id)
+      .then(movieId => axios.get(`https://api.themoviedb.org/3/movie/${movieId}?api_key=ce2c7cb6a10e5145e2d433e13db5058b&language=en-US`))
+      .then(movie => console.log(movie.data))
+      .catch(err => console.log(err));
   }
 
   // handles clicking on the watched button to swap to that tab
